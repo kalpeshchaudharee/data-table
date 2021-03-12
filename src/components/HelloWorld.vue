@@ -15,7 +15,7 @@
         responsive
         :items="filtered"
         :fields="fields"
-        split="split"
+        ref="my-table"
       >
         <!-- We are using utility class `text-nowrap` to help illustrate horizontal scrolling -->
         <template #head(id)="scope">
@@ -35,11 +35,31 @@
           ></b-form-input>
         </template>
       </b-table>
+      <b-overlay :show="isBusy" no-wrap opacity="0.5"></b-overlay>
     </div>
   </b-container>
 </template>
 
 <script>
+const database = [];
+
+for (let i = 0; i < 1000; i++) {
+  database.push({
+    id: i + 1,
+    a: Math.floor(Math.random() * 10000),
+    b: Math.floor(Math.random() * 10000),
+    c: Math.floor(Math.random() * 10000),
+    d: Math.floor(Math.random() * 10000),
+    e: Math.floor(Math.random() * 10000),
+    f: Math.floor(Math.random() * 10000),
+    g: Math.floor(Math.random() * 10000),
+    h: Math.floor(Math.random() * 10000),
+    i: Math.floor(Math.random() * 10000),
+    j: Math.floor(Math.random() * 10000),
+    k: Math.floor(Math.random() * 10000),
+    l: Math.floor(Math.random() * 10000)
+  });
+}
 import Sortable from "sortablejs";
 export default {
   name: "HelloWorld",
@@ -56,34 +76,80 @@ export default {
           sortable: true,
           filterByFormatted: true
         },
-        { key: "a", sortable: true, filterByFormatted: true },
-        { key: "b", sortable: true, filterByFormatted: true },
-        { key: "c", sortable: true, filterByFormatted: true },
-        { key: "d", sortable: true, filterByFormatted: true },
-        { key: "e", sortable: true, filterByFormatted: true },
-        { key: "f", sortable: true, filterByFormatted: true },
-        { key: "g", sortable: true, filterByFormatted: true },
-        { key: "h", sortable: true, filterByFormatted: true },
-        { key: "i", sortable: true, filterByFormatted: true },
-        { key: "j", sortable: true, filterByFormatted: true },
-        { key: "k", sortable: true, filterByFormatted: true },
-        { key: "l", sortable: true, filterByFormatted: true }
+        {
+          key: "a",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        },
+        {
+          key: "b",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        },
+        {
+          key: "c",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        },
+        {
+          key: "d",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        },
+        {
+          key: "e",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        },
+        {
+          key: "f",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        },
+        {
+          key: "g",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        },
+        {
+          key: "h",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        },
+        {
+          key: "i",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        },
+        {
+          key: "j",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        },
+        {
+          key: "k",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        },
+        {
+          key: "l",
+          sortable: true,
+          filterByFormatted: true,
+          thClass: "draggable"
+        }
       ],
-      items: Array.from({ length: 50 }).map((v, k) => ({
-        id: k + 1,
-        a: Math.floor(Math.random() * 10000),
-        b: Math.floor(Math.random() * 10000),
-        c: Math.floor(Math.random() * 10000),
-        d: Math.floor(Math.random() * 10000),
-        e: Math.floor(Math.random() * 10000),
-        f: Math.floor(Math.random() * 10000),
-        g: Math.floor(Math.random() * 10000),
-        h: Math.floor(Math.random() * 10000),
-        i: Math.floor(Math.random() * 10000),
-        j: Math.floor(Math.random() * 10000),
-        k: Math.floor(Math.random() * 10000),
-        l: Math.floor(Math.random() * 10000)
-      })),
+      items: [],
       filters: {
         id: "",
         a: "",
@@ -98,8 +164,25 @@ export default {
         j: "",
         k: "",
         l: ""
-      }
+      },
+      currentPage: 0,
+      perPage: 10,
+      totalItems: 50,
+      isBusy: false
     };
+  },
+  created() {
+    this.fetchItems();
+  },
+  mounted() {
+    const tableScrollBody = this.$refs["my-table"].$el;
+    /* Consider debouncing the event call */
+    tableScrollBody.addEventListener("scroll", this.onScroll);
+  },
+  beforeDestroy() {
+    /* Clean up just to be sure */
+    const tableScrollBody = this.$refs["my-table"].$el;
+    tableScrollBody.removeEventListener("scroll", this.onScroll);
   },
   computed: {
     filtered() {
@@ -129,7 +212,57 @@ export default {
           ];
     }
   },
-  methods: {},
+  methods: {
+    async fetchItems() {
+      /* No need to call if all items retrieved */
+      if (this.items.length === this.totalItems) return;
+
+      /* Enable busy state */
+      this.isBusy = true;
+
+      /* Missing error handling if call fails */
+      const startIndex = this.currentPage++ * this.perPage;
+      const endIndex = startIndex + this.perPage;
+      const newItems = await this.callDatabase(startIndex, endIndex);
+
+      /* Add new items to existing ones */
+      this.items = this.items.concat(newItems);
+
+      /* Disable busy state */
+      this.isBusy = false;
+    },
+    callDatabase(startIndex, endIndex) {
+      return new Promise(resolve => {
+        const delay = Math.floor(Math.random() * 1250) + 250;
+        setTimeout(() => {
+          resolve(database.slice(startIndex, endIndex));
+        }, delay);
+      });
+    },
+    onScroll(event) {
+      if (
+        event.target.scrollTop + event.target.clientHeight >=
+        event.target.scrollHeight
+      ) {
+        if (!this.isBusy) {
+          this.fetchItems();
+        }
+      }
+    }
+  },
+  watch: {
+    /* Optionally hide scrollbar when loading */
+    isBusy(newVal, oldVal) {
+      if (newVal !== oldVal) {
+        const tableScrollBody = this.$refs["my-table"].$el;
+        if (newVal === true) {
+          tableScrollBody.classList.add("overflow-hidden");
+        } else {
+          tableScrollBody.classList.remove("overflow-hidden");
+        }
+      }
+    }
+  },
   directives: {
     draggable: {
       inserted: function(el, binding, a) {
@@ -167,6 +300,9 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+body {
+  padding: 1rem;
+}
 h3 {
   margin: 40px 0 0;
 }
