@@ -10,7 +10,7 @@
         >
       </div>
       <b-table
-        sticky-header="stickyHeader"
+        sticky-header="80vh"
         :no-border-collapse="noCollapse"
         responsive
         :items="filtered"
@@ -166,8 +166,8 @@ export default {
         l: ""
       },
       currentPage: 0,
-      perPage: 10,
-      totalItems: 50,
+      perPage: 20,
+      totalItems: database.length,
       isBusy: false
     };
   },
